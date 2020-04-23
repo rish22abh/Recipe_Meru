@@ -6,6 +6,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Message
+import android.view.View
 import android.widget.Toast
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -93,6 +94,7 @@ class MainActivity : BaseActivity(), ApiCallBack {
         GetSearchAsync(application, handler).execute()
 
         imageViewSearch.setOnClickListener {
+            Utils.hideKeyBoard(this)
             if (!Utils.isNetworkAvailable(this)) {
                 Toast.makeText(this, "No internet", Toast.LENGTH_LONG).show()
                 return@setOnClickListener
@@ -113,6 +115,7 @@ class MainActivity : BaseActivity(), ApiCallBack {
     }
 
     private fun callListApi() {
+        progressBar.visibility = View.VISIBLE
         val apiInterface: APIInterface =
             APIClient.getClient().create(APIInterface::class.java)
         val callList: Call<RecipeModel>? = apiInterface.doGetRecipeList(searchTxt, pageNo)
@@ -121,8 +124,12 @@ class MainActivity : BaseActivity(), ApiCallBack {
 
 
     override fun onRequestSuccess(reqType: Int, result: Any?) {
+        progressBar.visibility = View.GONE
         if (result is RecipeModel) {
-            stopPagination = result.recipes.isEmpty()
+            if (result.recipes.isEmpty()){
+                stopPagination = result.recipes.isEmpty()
+                Toast.makeText(this,"No data for searched item",Toast.LENGTH_LONG).show()
+            }
             val startOfList: Int = listRecipe?.size ?: 0
             listRecipe?.addAll(result.recipes)
             recyclerAdapter?.notifyItemRangeInserted(startOfList, listRecipe?.size ?: 0)
@@ -133,6 +140,7 @@ class MainActivity : BaseActivity(), ApiCallBack {
     }
 
     override fun onRequestFail(reqType: Int, result: String?) {
+        progressBar.visibility = View.GONE
         stopPagination = true;
         Toast.makeText(this, result, Toast.LENGTH_LONG).show()
     }
